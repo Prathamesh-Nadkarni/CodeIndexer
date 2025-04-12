@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Explorer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        header {
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .filters {
+            width: 250px;
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            height: calc(100vh - 150px);
+            overflow: auto;
+        }
+        .filter-section {
+            margin-bottom: 20px;
+        }
+        .filter-section h3 {
+            margin-top: 0;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        .checkbox-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            padding: 8px;
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .checkbox-item input {
+            margin-right: 8px;
+        }
+        .select-all {
+            margin-bottom: 8px;
+        }
+        .folder-tree {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            padding: 8px;
+        }
+        .tree-item {
+            margin: 2px 0;
+        }
+        .tree-folder {
+            cursor: pointer;
+            user-select: none;
+        }
+        .tree-folder::before {
+            content: "▶ ";
+            font-size: 10px;
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+        .tree-folder.expanded::before {
+            transform: rotate(90deg);
+        }
+        .tree-folder.expanded + .tree-children {
+            display: block;
+        }
+        .tree-children {
+            display: none;
+            padding-left: 20px;
+        }
+        .tree-folder.selected, .tree-folder:hover {
+            background-color: #e6f7ff;
+            border-radius: 4px;
+        }
+        .tree-folder.selected {
+            font-weight: bold;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            height: calc(100vh - 150px);
+            overflow: auto;
+        }
+        .main-content {
+            flex: 1;
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            height: calc(100vh - 150px);
+            overflow: auto;
+        }
+        .search-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        #search-input {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .btn {
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        .folder {
+            cursor: pointer;
+            padding: 5px;
+            margin: 2px 0;
+            border-radius: 4px;
+        }
+        .folder:hover {
+            background-color: #f0f0f0;
+        }
+        .file {
+            cursor: pointer;
+            padding: 5px;
+            margin: 2px 0;
+            border-radius: 4px;
+        }
+        .file:hover {
+            background-color: #f0f0f0;
+        }
+        .folder::before {
+            content: "📁 ";
+        }
+        .file::before {
+            content: "📄 ";
+        }
+        .breadcrumb {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .breadcrumb a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-family: 'Courier New', Courier, monospace;
+            line-height: 1.5;
+        }
+        .line-numbers {
+            user-select: none;
+            text-align: right;
+            color: #999;
+            padding-right: 10px;
+            border-right: 1px solid #ddd;
+            margin-right: 10px;
+        }
+        .code-line {
+            display: flex;
+        }
+        .code-line:hover {
+            background-color: #e6f7ff;
+        }
+        .code-content {
+            flex: 1;
+            white-space: pre;
+        }
+        .result-item {
+            margin-bottom: 15px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid #3498db;
+        }
+        .result-path {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .result-line {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .result-content {
+            background-color: white;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin-top: 5px;
+            white-space: pre-wrap;
+            border: 1px solid #ddd;
+        }
+        .highlight {
+            background-color: #fff176;
+            padding: 2px;
+            border-radius: 2px;
+        }
+        #status {
+            margin-bottom: 15px;
+            color: #666;
+        }
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(0,0,0,.1);
+            border-radius: 50%;
+            border-top-color: #3498db;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Code Explorer</h1>
+    </header>
+    
+    <div class="search-container">
+        <input type="text" id="search-input" placeholder="Search for files, code, or keywords...">
+        <button id="search-button" class="btn">Search</button>
+    </div>
+    
+    <div id="status">Ready</div>
+    
+    <div class="container">
+        <div class="filters">
+            <div class="filter-section">
+                <div class="checkbox-item">
+                    <input type="checkbox" id="search-comments">
+                    <label for="search-comments">Search in comments only</label>
+                </div>
+                <h3>File Extensions</h3>
+                <div class="extension-filter">
+                    <div class="select-all">
+                        <input type="checkbox" id="select-all-extensions" checked>
+                        <label for="select-all-extensions">Select All</label>
+                    </div>
+                    <div id="extension-list" class="checkbox-list">
+                        <!-- Will be populated dynamically -->
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+        <div class="sidebar" id="file-explorer">
+            <!-- File explorer will be populated here -->
+            <div id="loading-files">Loading files... <span class="loading"></span></div>
+        </div>
+        
+        <div class="main-content" id="content">
+            <!-- File content or search results will be displayed here -->
+            <div id="welcome">
+                <h2>Welcome to Code Explorer</h2>
+                <p>Browse your codebase using the file explorer on the left, or search for specific code using the search box above.</p>
+                <p>Features:</p>
+                <ul>
+                    <li>Browse files and directories</li>
+                    <li>Search across your entire codebase</li>
+                    <li>View file contents with line numbers</li>
+                    <li>Open files directly in VS Code at specific lines</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add this at the top of your script
+        const IGNORED_DIRECTORIES = [
+        'node_modules', '.git', 'dist', 'build', '.next', '.vscode', '.idea',
+        'target', 'bin', 'obj', 'out', 'coverage', 'logs', 'tmp', 'temp',
+        '.env', '__pycache__', 'env', 'android', '.angular'
+        ];
+
+        // Then update buildCompleteStructure
+        async function buildCompleteStructure(path = '') {
+            try {
+                console.log('Building structure for path:', path);
+                const response = await fetch(`/api/files${path}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}`);
+                }
+                
+                const files = await response.json();
+                console.log(`Found ${files.length} files/folders at ${path}`);
+                
+                // Collect extensions from files
+                collectExtensions(files, path);
+                
+                // Build folder structure for current path
+                buildFolderStructure(path);
+                
+                // Recursively process subdirectories (but limit depth to avoid infinite recursion)
+                for (const file of files) {
+                    if (file.type === 'directory' && !IGNORED_DIRECTORIES.includes(file.name)) {
+                        const newPath = path + '/' + file.name;
+                        await buildCompleteStructure(newPath);
+                    }
+                }
+            } catch (error) {
+                console.error('Error building file structure for path:', path, error);
+            }
+        }
+
+        // Current path for navigation
+        let currentPath = '';
+        
+        // Load files in the explorer
+        async function loadFiles(path = '') {
+    try {
+        const fileExplorer = document.getElementById('file-explorer');
+        const loadingElement = document.getElementById('loading-files');
+        
+        // Check if loading element exists before trying to access its style
+        if (loadingElement) {
+            loadingElement.style.display = 'block';
+        } else {
+            // Create the loading element if it doesn't exist
+            const newLoadingElement = document.createElement('div');
+            newLoadingElement.id = 'loading-files';
+            newLoadingElement.innerHTML = 'Loading files... <span class="loading"></span>';
+            fileExplorer.appendChild(newLoadingElement);
+        }
+        
+        const response = await fetch(`/api/files${path}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error ${response.status}`);
+        }
+        
+        const files = await response.json();
+        
+        // Clear previous content
+        fileExplorer.innerHTML = '';
+                
+                // Add breadcrumb navigation
+                if (path) {
+                    const breadcrumb = document.createElement('div');
+                    breadcrumb.className = 'breadcrumb';
+                    
+                    // Create path parts for navigation
+                    const parts = path.split('/').filter(p => p);
+                    let currentBreadcrumb = '';
+                    
+                    // Add root link
+                    breadcrumb.innerHTML = '<a href="#" data-path="">Root</a>';
+                    
+                    // Add each path part
+                    parts.forEach((part, index) => {
+                        currentBreadcrumb += '/' + part;
+                        breadcrumb.innerHTML += ` / <a href="#" data-path="${currentBreadcrumb}">${part}</a>`;
+                    });
+                    
+                    // Add event listeners to breadcrumb links
+                    fileExplorer.appendChild(breadcrumb);
+                    breadcrumb.querySelectorAll('a').forEach(link => {
+                        link.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            const pathToLoad = e.target.getAttribute('data-path');
+                            currentPath = pathToLoad;
+                            loadFiles(pathToLoad);
+                        });
+                    });
+                }
+                
+                // Sort files: directories first, then files, both alphabetically
+                files.sort((a, b) => {
+                    if (a.type !== b.type) {
+                        return a.type === 'directory' ? -1 : 1;
+                    }
+                    return a.name.localeCompare(b.name);
+                });
+                
+                // Create file/folder elements
+                files.forEach(file => {
+                    const element = document.createElement('div');
+                    element.className = file.type === 'directory' ? 'folder' : 'file';
+                    element.textContent = file.name;
+                    
+                    if (file.type === 'directory') {
+                        element.addEventListener('click', () => {
+                            const newPath = path + '/' + file.name;
+                            currentPath = newPath;
+                            loadFiles(newPath);
+                        });
+                    } else {
+                        element.addEventListener('click', () => {
+                            loadFileContent(path + '/' + file.name);
+                        });
+                    }
+                    
+                    fileExplorer.appendChild(element);
+                });
+                
+                const updatedLoadingElement = document.getElementById('loading-files');
+                if (updatedLoadingElement) {
+                    updatedLoadingElement.style.display = 'none';
+                }
+                
+            } catch (error) {
+                console.error('Error loading files:', error);
+                document.getElementById('file-explorer').innerHTML = `
+                    <div class="breadcrumb">
+                        <a href="#" data-path="">Root</a>
+                    </div>
+                    <div style="color: red; padding: 10px;">
+                        Error loading files: ${error.message}
+                    </div>
+                `;
+                
+                // Add event listener to the Root link
+                document.querySelector('.breadcrumb a').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    currentPath = '';
+                    loadFiles('');
+                });
+            }
+        }
+        
+        // Load file content
+        async function loadFileContent(filePath) {
+            try {
+                const contentDiv = document.getElementById('content');
+                const response = await fetch(`/api/file${filePath}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error ${response.status}`);
+            }
+            
+            const content = await response.text();
+            
+            // Create breadcrumb for the file
+            const breadcrumb = document.createElement('div');
+            breadcrumb.className = 'breadcrumb';
+            
+            // Extract file name from path
+            const fileName = filePath.split('/').pop();
+            breadcrumb.innerHTML = `<span>${fileName}</span>`;
+            
+            // Create a button to open in VS Code
+            const openButton = document.createElement('button');
+            openButton.className = 'btn';
+            openButton.style.float = 'right';
+            openButton.textContent = 'Open in VS Code';
+            openButton.addEventListener('click', () => {
+                openInVSCode(filePath, 1);
+            });
+            
+            breadcrumb.appendChild(openButton);
+            
+            // Create content with line numbers
+            const codeContainer = document.createElement('div');
+            codeContainer.className = 'code-container';
+            
+            const lines = content.split('\n');
+            lines.forEach((line, index) => {
+                const lineNumber = index + 1;
+                
+                const codeLine = document.createElement('div');
+                codeLine.className = 'code-line';
+                
+                const lineNumberSpan = document.createElement('span');
+                lineNumberSpan.className = 'line-numbers';
+                lineNumberSpan.textContent = lineNumber;
+                lineNumberSpan.style.cursor = 'pointer';
+                lineNumberSpan.title = 'Click to open in VS Code at this line';
+                lineNumberSpan.addEventListener('click', () => {
+                    openInVSCode(filePath, lineNumber);
+                });
+                
+                const codeContent = document.createElement('span');
+                codeContent.className = 'code-content';
+                codeContent.textContent = line;
+                
+                codeLine.appendChild(lineNumberSpan);
+                codeLine.appendChild(codeContent);
+                codeContainer.appendChild(codeLine);
+            });
+            
+            // Clear and add new content
+            contentDiv.innerHTML = '';
+            contentDiv.appendChild(breadcrumb);
+            contentDiv.appendChild(codeContainer);
+            
+        } catch (error) {
+            console.error('Error loading file content:', error);
+            document.getElementById('content').innerHTML = `
+                <div style="color: red; padding: 10px;">
+                    Error loading file content: ${error.message}
+                </div>
+            `;
+        }
+    }
+    
+    // Search files
+    async function searchFiles(query) {
+        try {
+            const contentDiv = document.getElementById('content');
+            const statusDiv = document.getElementById('status');
+            
+            statusDiv.innerHTML = 'Searching... <span class="loading"></span>';
+            contentDiv.innerHTML = '<div id="searching">Searching for "' + query + '"... <span class="loading"></span></div>';
+            
+            const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error ${response.status}`);
+            }
+            
+            const results = await response.json();
+            
+            // Display results
+            contentDiv.innerHTML = '';
+            
+            if (results.length === 0) {
+                contentDiv.innerHTML = `<div>No results found for "${query}"</div>`;
+                statusDiv.textContent = 'No results found';
+                return;
+            }
+            
+            const resultsHeader = document.createElement('h2');
+            resultsHeader.textContent = `Found ${results.length} results for "${query}"`;
+            contentDiv.appendChild(resultsHeader);
+            
+            results.forEach(result => {
+                const resultItem = document.createElement('div');
+                resultItem.className = 'result-item';
+                
+                const pathLine = document.createElement('div');
+                pathLine.className = 'result-path';
+                pathLine.textContent = result.path;
+                
+                const lineInfo = document.createElement('div');
+                lineInfo.className = 'result-line';
+                lineInfo.textContent = `Line ${result.line}`;
+                lineInfo.style.cursor = 'pointer';
+                lineInfo.title = 'Click to open in VS Code at this line';
+                lineInfo.addEventListener('click', () => {
+                    openInVSCode(result.path, result.line);
+                });
+                
+                const contentPreview = document.createElement('div');
+                contentPreview.className = 'result-content';
+                
+                // Highlight the matching text
+                const highlightedContent = highlightText(result.content, result.match);
+                contentPreview.innerHTML = highlightedContent;
+                
+                resultItem.appendChild(pathLine);
+                resultItem.appendChild(lineInfo);
+                resultItem.appendChild(contentPreview);
+                
+                contentDiv.appendChild(resultItem);
+            });
+            
+            statusDiv.textContent = `Found ${results.length} results`;
+            
+        } catch (error) {
+            console.error('Error searching files:', error);
+            document.getElementById('content').innerHTML = `
+                <div style="color: red; padding: 10px;">
+                    Error searching files: ${error.message}
+                </div>
+            `;
+            document.getElementById('status').textContent = 'Search error';
+        }
+    }
+    
+    // Highlight text in a string
+    function highlightText(text, query) {
+        if (!query) return text;
+        
+        const regex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+        return text.replace(regex, match => `<span class="highlight">${match}</span>`);
+    }
+    
+    // Open file in VS Code at specific line
+    async function openInVSCode(filePath, line) {
+        try {
+            const response = await fetch(`/api/open?file=${encodeURIComponent(filePath)}&line=${line}`);
+            const data = await response.json();
+            
+            if (!data.success) {
+                throw new Error(data.error || 'Failed to open in VS Code');
+            }
+            
+            // Show a temporary success message
+            const statusDiv = document.getElementById('status');
+            const originalText = statusDiv.textContent;
+            statusDiv.textContent = `Opening ${filePath}:${line} in VS Code...`;
+            
+            setTimeout(() => {
+                statusDiv.textContent = originalText;
+            }, 3000);
+            
+        } catch (error) {
+            console.error('Error opening in VS Code:', error);
+            alert(`Error opening in VS Code: ${error.message}`);
+        }
+    }
+    
+    // Event listeners
+    document.getElementById('search-button').addEventListener('click', () => {
+        const query = document.getElementById('search-input').value.trim();
+        if (query) {
+            searchFiles(query);
+        }
+    });
+    
+    document.getElementById('search-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            const query = document.getElementById('search-input').value.trim();
+            if (query) {
+                searchFiles(query);
+            }
+        }
+    });
+    // Store all discovered extensions and folders
+    let allExtensions = new Set();
+    let folderStructure = {};
+    let selectedFolder = '';
+
+    // Function to extract file extension
+    function getFileExtension(filename) {
+        const parts = filename.split('.');
+        return parts.length > 1 ? '.' + parts.pop().toLowerCase() : '';
+    }
+
+    // Function to build folder structure
+    function buildFolderStructure(path) {
+    if (!path) return;
+    
+    const parts = path.split('/').filter(p => p);
+    if (parts.length === 0) return;
+    
+    console.log('Building folder structure for:', path);
+    let current = folderStructure;
+    
+    parts.forEach(part => {
+        if (!current[part]) {
+            current[part] = {};
+        }
+        current = current[part];
+    });
+}
+
+    // Function to render the folder tree
+    function renderFolderTree() {
+        console.log('Rendering folder tree with structure:', JSON.stringify(folderStructure));
+        const treeContainer = document.getElementById('folder-tree');
+        if (!treeContainer) {
+            console.error('Folder tree container not found!');
+            return;
+        }
+        
+        treeContainer.innerHTML = '';
+        
+        // Add root folder
+        const rootItem = document.createElement('div');
+        rootItem.className = 'tree-item';
+        
+        const rootFolder = document.createElement('div');
+        rootFolder.className = 'tree-folder' + (selectedFolder === '' ? ' selected' : '');
+        rootFolder.textContent = 'Root';
+        rootFolder.addEventListener('click', () => {
+            document.querySelectorAll('.tree-folder.selected').forEach(el => el.classList.remove('selected'));
+            rootFolder.classList.add('selected');
+            selectedFolder = '';
+        });
+        
+        rootItem.appendChild(rootFolder);
+        treeContainer.appendChild(rootItem);
+        
+        // Render the rest of the tree
+        if (Object.keys(folderStructure).length > 0) {
+            renderFolderTreeRecursive(folderStructure, treeContainer, '');
+        } else {
+            console.warn('No folder structure to render');
+        }
+    }
+
+    // Recursive function to render folder tree
+    function renderFolderTreeRecursive(node, parentElement, path) {
+    const keys = Object.keys(node).sort();
+    
+    if (keys.length === 0) return;
+    
+    const childrenContainer = document.createElement('div');
+    childrenContainer.className = 'tree-children';
+    
+    keys.forEach(key => {
+        // Ensure consistent path formatting - either both with or without leading slash
+        const fullPath = path ? path + '/' + key : '/' + key;
+        
+        const item = document.createElement('div');
+        item.className = 'tree-item';
+        
+        const folder = document.createElement('div');
+        folder.className = 'tree-folder' + (selectedFolder === fullPath ? ' selected' : '');
+        folder.textContent = key;
+        
+        folder.addEventListener('click', (e) => {
+            e.stopPropagation();
+            
+            // Toggle expanded state
+            folder.classList.toggle('expanded');
+            
+            // Set as selected folder
+            document.querySelectorAll('.tree-folder.selected').forEach(el => el.classList.remove('selected'));
+            folder.classList.add('selected');
+            selectedFolder = fullPath;
+        });
+        
+        item.appendChild(folder);
+        
+        // Recursively render children
+        if (Object.keys(node[key]).length > 0) {
+            renderFolderTreeRecursive(node[key], item, fullPath);
+        }
+        
+        childrenContainer.appendChild(item);
+    });
+    
+    parentElement.appendChild(childrenContainer);
+}
+
+    // Function to render extension checkboxes
+    function renderExtensionList() {
+        const extensionList = document.getElementById('extension-list');
+        extensionList.innerHTML = '';
+        
+        // Sort extensions alphabetically
+        const sortedExtensions = Array.from(allExtensions).sort();
+        
+        sortedExtensions.forEach(ext => {
+            const item = document.createElement('div');
+            item.className = 'checkbox-item';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = 'ext-' + ext.replace('.', '');
+            checkbox.value = ext;
+            checkbox.checked = true;
+            
+            const label = document.createElement('label');
+            label.htmlFor = checkbox.id;
+            label.textContent = ext || '(no extension)';
+            
+            item.appendChild(checkbox);
+            item.appendChild(label);
+            extensionList.appendChild(item);
+        });
+    }
+
+    // Function to collect extensions from files
+    function collectExtensions(files, path = '') {
+    if (!files || !Array.isArray(files)) {
+        console.error('Invalid files data:', files);
+        return;
+    }
+    
+    files.forEach(file => {
+        if (file.type === 'file') {
+            const ext = getFileExtension(file.name);
+            allExtensions.add(ext);
+        }
+    });
+}
+
+    // Override the loadFiles function to collect extensions and build folder structure
+const originalLoadFiles = loadFiles;
+loadFiles = async function(path = '') {
+    const result = await originalLoadFiles(path);
+    
+    // After loading files, update extensions and folder structure
+    try {
+        const response = await fetch(`/api/files${path}`);
+        if (response.ok) {
+            const files = await response.json();
+            collectExtensions(files, path);
+            buildFolderStructure(path);
+            
+            // Only render when explicitly requested, not on every load
+            // Remove or comment out these lines:
+            // if (path === '') {
+            //     renderExtensionList();
+            //     renderFolderTree();
+            // }
+        }
+    } catch (error) {
+        console.error('Error updating filters:', error);
+    }
+    
+    return result;
+};
+
+
+    // Override the searchFiles function to respect filters
+    searchFiles = async function(query) {
+    // Get selected extensions
+    const selectedExtensions = Array.from(
+        document.querySelectorAll('#extension-list input:checked')
+    ).map(checkbox => checkbox.value);
+    
+    // Get comment search option
+    const searchCommentsOnly = document.getElementById('search-comments').checked;
+    
+    try {
+            const contentDiv = document.getElementById('content');
+            const statusDiv = document.getElementById('status');
+            
+            statusDiv.innerHTML = 'Searching... <span class="loading"></span>';
+            contentDiv.innerHTML = '<div id="searching">Searching for "' + query + '"... <span class="loading"></span></div>';
+            
+            // Add extension and folder filters to the query
+            let url = `/api/search?q=${encodeURIComponent(query)}`;
+        
+            if (selectedExtensions.length > 0 && selectedExtensions.length < allExtensions.size) {
+                url += `&extensions=${encodeURIComponent(selectedExtensions.join(','))}`;
+            }
+            
+            if (selectedFolder) {
+                url += `&folder=${encodeURIComponent(selectedFolder)}`;
+            }
+            
+            if (searchCommentsOnly) {
+                url += '&comments=true';
+            }
+            
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP error ${response.status}`);
+            }
+            
+            const results = await response.json();
+            
+            // Filter results client-side as well (in case server doesn't support filtering)
+            const filteredResults = results.filter(result => {
+                // Filter by extension
+                const ext = getFileExtension(result.path);
+                if (selectedExtensions.length > 0 && !selectedExtensions.includes(ext)) {
+                    return false;
+                }
+                
+                // Filter by folder
+                if (selectedFolder && !result.path.startsWith(selectedFolder)) {
+                    return false;
+                }
+                
+                return true;
+            });
+            
+            // Display results
+            contentDiv.innerHTML = '';
+            
+            if (filteredResults.length === 0) {
+                contentDiv.innerHTML = `<div>No results found for "${query}"</div>`;
+                statusDiv.textContent = 'No results found';
+                return;
+            }
+            
+            const resultsHeader = document.createElement('h2');
+            resultsHeader.textContent = `Found ${filteredResults.length} results for "${query}"`;
+            contentDiv.appendChild(resultsHeader);
+            
+            filteredResults.forEach(result => {
+                // Rest of the original function to display results
+                const resultItem = document.createElement('div');
+                resultItem.className = 'result-item';
+                
+                const pathLine = document.createElement('div');
+                pathLine.className = 'result-path';
+                pathLine.textContent = result.path;
+                
+                const lineInfo = document.createElement('div');
+                lineInfo.className = 'result-line';
+                lineInfo.textContent = `Line ${result.line}`;
+                lineInfo.style.cursor = 'pointer';
+                lineInfo.title = 'Click to open in VS Code at this line';
+                lineInfo.addEventListener('click', () => {
+                    openInVSCode(result.path, result.line);
+                });
+                
+                const contentPreview = document.createElement('div');
+                contentPreview.className = 'result-content';
+                
+                // Highlight the matching text
+                const highlightedContent = highlightText(result.content, result.match);
+                contentPreview.innerHTML = highlightedContent;
+                
+                resultItem.appendChild(pathLine);
+                resultItem.appendChild(lineInfo);
+                resultItem.appendChild(contentPreview);
+                
+                contentDiv.appendChild(resultItem);
+            });
+            
+            statusDiv.textContent = `Found ${filteredResults.length} results`;
+            
+        } catch (error) {
+            console.error('Error searching files:', error);
+            document.getElementById('content').innerHTML = `
+                <div style="color: red; padding: 10px;">
+                    Error searching files: ${error.message}
+                </div>
+            `;
+            document.getElementById('status').textContent = 'Search error';
+        }
+    };
+
+    // Add event listener for "Select All" checkbox
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('select-all-extensions').addEventListener('change', (e) => {
+            const checkboxes = document.querySelectorAll('#extension-list input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = e.target.checked;
+            });
+        });
+    });
+
+    // Initialize
+    window.addEventListener('load', async () => {
+        try {
+            // Show loading indicator
+            document.getElementById('status').textContent = 'Loading file structure...';
+            
+            // Reset data structures
+            allExtensions = new Set();
+            folderStructure = {};
+            selectedFolder = '';
+            
+            console.log('Starting complete structure build...');
+            // First, build the complete folder structure
+            await buildCompleteStructure('');
+            
+            console.log('Structure built, rendering UI...');
+            console.log('Extensions found:', Array.from(allExtensions));
+            console.log('Folder structure:', JSON.stringify(folderStructure));
+            
+            // Then render the UI elements
+            renderExtensionList();
+            renderFolderTree();
+            
+            // Finally load the files in the explorer
+            await loadFiles('');
+            
+            document.getElementById('status').textContent = 'Ready';
+        } catch (error) {
+            console.error('Error during initialization:', error);
+            document.getElementById('status').textContent = 'Error loading application';
+        }
+    });
+
+// Build the complete structure first
+async function buildCompleteStructure(path = '') {
+    try {
+        const response = await fetch(`/api/files${path}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error ${response.status}`);
+        }
+        
+        const files = await response.json();
+        
+        // Collect extensions from files
+        collectExtensions(files, path);
+        
+        // Build folder structure for current path
+        buildFolderStructure(path);
+        
+        // Recursively process subdirectories (but limit depth to avoid infinite recursion)
+        for (const file of files) {
+            if (file.type === 'directory' && !IGNORED_DIRECTORIES.includes(file.name)) {
+                const newPath = path + '/' + file.name;
+                await buildCompleteStructure(newPath);
+            }
+        }
+    } catch (error) {
+        console.error('Error building file structure:', error);
+    }
+}
+
+</script>
+</body> </html>
