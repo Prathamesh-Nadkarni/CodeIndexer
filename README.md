@@ -1,8 +1,8 @@
-# Code Explorer
+# Code Indexer
 
 A lightweight, web-based code explorer that helps you navigate, search, and interact with your codebase directly from your browser.
 
-![Code Explorer] an intuitive interface to browse your project files, search across your entire codebase, and seamlessly open files in VS Code. It's designed to enhance your development workflow by making code navigation and discovery faster and more efficient.
+Code Indexer an intuitive interface to browse your project files, search across your entire codebase, and seamlessly open files in VS Code. It's designed to enhance your development workflow by making code navigation and discovery faster and more efficient.
 
 ## Features
 
