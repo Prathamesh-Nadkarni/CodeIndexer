@@ -4,6 +4,18 @@ A lightweight, web-based code explorer that helps you navigate, search, and inte
 
 Code Indexer an intuitive interface to browse your project files, search across your entire codebase, and seamlessly open files in VS Code. It's designed to enhance your development workflow by making code navigation and discovery faster and more efficient.
 
+
+##Screenshots
+**Landing
+![Screenshot 2025-04-29 033258](https://github.com/user-attachments/assets/864a650e-b03b-4dea-a3cf-15e7d0ab4d7f)
+
+**Full Code Search
+![Screenshot 2025-04-29 033319](https://github.com/user-attachments/assets/4889bedb-586d-40f0-87b0-f77ee4ee03a7)
+
+**Comment Search
+![Screenshot 2025-04-29 033335](https://github.com/user-attachments/assets/170508e0-cc30-4ff5-b819-57452d4dbd89)
+
+
 ## Features
 
 - **File Browser**: Navigate through your project's directory structure with an intuitive file explorer
